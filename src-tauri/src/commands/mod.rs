@@ -15,4 +15,4 @@ pub use long_task::{cancel_long_task, start_long_task};
 pub use notes::{create_note, delete_note, list_notes};
 #[cfg(desktop)]
 pub use updater::{check_for_update, install_update};
-pub use window::close_splashscreen;
+pub use window::{close_splashscreen, get_theme_value, set_theme_value};

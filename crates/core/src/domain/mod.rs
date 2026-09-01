@@ -2,5 +2,6 @@
 
 mod greeting;
 pub mod notes;
+pub mod theme;
 
 pub use greeting::greet;
