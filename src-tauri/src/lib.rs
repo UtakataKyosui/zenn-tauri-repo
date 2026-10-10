@@ -15,8 +15,11 @@ pub mod specta_bindings;
 pub mod state;
 pub mod tasks;
 
+use app_core::domain::theme::ThemeMode;
 use tauri::Manager;
+use tauri_plugin_store::StoreExt;
 
+use commands::window::{persist_theme_value, THEME_STORE_FILE, THEME_STORE_KEY};
 use state::AppState;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -72,6 +75,38 @@ pub fn run() {
                 Ok::<_, Box<dyn std::error::Error>>(pool)
             })?;
             app.manage(pool);
+
+            // テーマ記事の検証用初期化。ストアの値を読み戻し、AppState とウィンドウの
+            // 両方に反映する。値が無ければ system（2）扱いにする。
+            let store = app.store(THEME_STORE_FILE)?;
+            let theme_value = store
+                .get(THEME_STORE_KEY)
+                .and_then(|v| v.as_u64())
+                .map(|v| v as u8)
+                .unwrap_or_else(|| ThemeMode::System.to_u8());
+            app.state::<AppState>().set_theme_value(theme_value);
+            if store.get(THEME_STORE_KEY).is_none() {
+                persist_theme_value(&app.handle().clone(), theme_value)
+                    .map_err(|e| format!("failed to persist initial theme: {e}"))?;
+            }
+
+            if let Some(window) = app.get_webview_window("main") {
+                let requested = match ThemeMode::from_u8(theme_value) {
+                    ThemeMode::Light => Some(tauri::Theme::Light),
+                    ThemeMode::Dark => Some(tauri::Theme::Dark),
+                    ThemeMode::System => None,
+                };
+                window.set_theme(requested)?;
+
+                // ドキュメントいわく WindowEvent::ThemeChanged は window の theme が
+                // None のときだけ配信される。この非対称性を実機ログで確認するための
+                // 観測点として、受信したらそのまま記録するだけにする。
+                window.on_window_event(move |event| {
+                    if let tauri::WindowEvent::ThemeChanged(theme) = event {
+                        log::info!("ThemeChanged event received: {theme:?}");
+                    }
+                });
+            }
 
             #[cfg(desktop)]
             desktop::setup(app)?;

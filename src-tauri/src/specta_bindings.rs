@@ -26,6 +26,8 @@ pub fn typed_builder() -> Builder {
             crate::commands::notes::list_notes,
             crate::commands::notes::delete_note,
             crate::commands::window::close_splashscreen,
+            crate::commands::window::set_theme_value,
+            crate::commands::window::get_theme_value,
             crate::commands::updater::check_for_update,
             crate::commands::updater::install_update,
         ])
@@ -46,6 +48,8 @@ pub fn typed_builder() -> Builder {
             crate::commands::notes::list_notes,
             crate::commands::notes::delete_note,
             crate::commands::window::close_splashscreen,
+            crate::commands::window::set_theme_value,
+            crate::commands::window::get_theme_value,
         ])
         .events(collect_events![crate::tasks::TaskProgress])
 }

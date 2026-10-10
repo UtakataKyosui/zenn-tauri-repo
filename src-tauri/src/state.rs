@@ -14,6 +14,9 @@ pub struct AppState {
     inner: Arc<RwLock<AppStateInner>>,
     next_task_id: AtomicU64,
     tasks: Arc<RwLock<HashMap<String, CancellationToken>>>,
+    /// `app_core::domain::theme::ThemeMode` の数値表現。ウィンドウ生成前後で読み書きするため
+    /// 同期の `std::sync::Mutex` で持つ（`await` を挟まない短い操作のみ）。
+    theme: std::sync::Mutex<u8>,
 }
 
 #[derive(Default)]
@@ -27,6 +30,20 @@ impl AppState {
         let mut inner = self.inner.write().await;
         inner.greet_count += 1;
         inner.greet_count
+    }
+
+    pub fn theme_value(&self) -> u8 {
+        *self
+            .theme
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+    }
+
+    pub fn set_theme_value(&self, value: u8) {
+        *self
+            .theme
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner()) = value;
     }
 
     /// RS-10: 長時間処理の雛形。新しいタスク ID を発行し、キャンセル用トークンを登録する。

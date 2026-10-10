@@ -113,6 +113,26 @@ async closeSplashscreen() : Promise<Result<null, AppError>> {
 }
 },
 /**
+ * テーマ記事の検証用コマンド。`light`/`dark` は明示的な `Theme` を、`system` は `None` を
+ * `set_theme` に渡す。`None` を渡した場合だけ `WindowEvent::ThemeChanged` が配信されるという
+ * ドキュメント記載の非対称性を、この経路の実装で実機検証する。
+ */
+async setThemeValue(value: number) : Promise<Result<number, AppError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("set_theme_value", { value }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * `AppState` が保持する現在のテーマ数値をそのまま返す。起動直後、まだ
+ * `theme-changed` イベントが発生していない時点の初期表示に使う。
+ */
+async getThemeValue() : Promise<number> {
+    return await TAURI_INVOKE("get_theme_value");
+},
+/**
  * APP-08: 自動アップデート。署名検証は tauri-plugin-updater が config の pubkey に基づき
  * 行う（CI-05 で鍵と配信マニフェストを生成する）。デスクトップのみで意味を持つ機能
  * （§3, レビュー観点 §3）。
